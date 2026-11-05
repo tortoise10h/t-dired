@@ -39,28 +39,30 @@ func initModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return loadDirFiles()
+	return loadDirEntries(".")
 }
 
-func loadDirFiles() tea.Cmd {
+func loadDirEntries(path string) tea.Cmd {
 	return func() tea.Msg {
-		cwd, err := os.Getwd()
+		targetDir, err := filepath.Abs(path)
 		if err != nil {
 			return dirLoadedMsg{
-				err: err,
+				path: path,
+				err:  err,
 			}
 		}
 
-		dirEntries, err := os.ReadDir(cwd)
+		dirEntries, err := os.ReadDir(targetDir)
 		if err != nil {
 			return dirLoadedMsg{
-				err: err,
+				path: path,
+				err:  err,
 			}
 		}
 
 		var entries []entry
 
-		parentDir := filepath.Dir(cwd)
+		parentDir := filepath.Dir(targetDir)
 		entries = append(entries, entry{
 			name:     "..",
 			isDir:    true,
@@ -71,12 +73,12 @@ func loadDirFiles() tea.Cmd {
 			entries = append(entries, entry{
 				name:     de.Name(),
 				isDir:    de.IsDir(),
-				fullPath: filepath.Join(cwd, de.Name()),
+				fullPath: filepath.Join(targetDir, de.Name()),
 			})
 		}
 
 		return dirLoadedMsg{
-			path:    cwd,
+			path:    targetDir,
 			entries: entries,
 		}
 	}
@@ -116,13 +118,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "down", "j", "n":
-			if m.cursor < len(m.entries) - 1 {
+			if m.cursor < len(m.entries)-1 {
 				m.cursor++
 			}
 		case "up", "k", "p":
 			if m.cursor > 0 {
 				m.cursor--
 			}
+		case "enter":
+			if m.cursor >= 0 && m.cursor < len(m.entries) {
+				selectedEntry := m.entries[m.cursor]
+				if selectedEntry.isDir {
+					return m, loadDirEntries(selectedEntry.fullPath)
+				}
+			}
+
+			return m, nil
 		}
 	case dirLoadedMsg:
 		if msg.err != nil {
