@@ -1,0 +1,1 @@
+This is the TUI application written in Go for building a file manager that replicate the idea of emacs dired. The idea is you're an Emacs user and you're familiar with the Dired behavior, keybindings and you are on terminal and want to do quick file check, copy, delete, move, ... you can do it with ~t-dired~ like you're on emacs
