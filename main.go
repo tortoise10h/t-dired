@@ -7,7 +7,10 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
+
+var cursorStyle = lipgloss.NewStyle().Underline(true)
 
 type entry struct {
 	name     string
@@ -83,11 +86,18 @@ func (m model) View() tea.View {
 	var s strings.Builder
 	s.WriteString("T-Dired\n\n")
 
-	for _, entry := range m.entries {
+	for i, entry := range m.entries {
+		var renderedEntry string
 		if entry.isDir {
-			fmt.Fprintf(&s, "%v/\n", entry.name)
+			renderedEntry = fmt.Sprintf("%v/", entry.name)
 		} else {
-			fmt.Fprintf(&s, "%v\n", entry.name)
+			renderedEntry = fmt.Sprintf("%v", entry.name)
+		}
+
+		if i == m.cursor {
+			fmt.Fprintf(&s, "> %s\n", cursorStyle.Render(renderedEntry))
+		} else {
+			fmt.Fprintf(&s, "  %s\n", renderedEntry)
 		}
 	}
 
@@ -105,6 +115,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "down", "j", "n":
+			if m.cursor < len(m.entries) - 1 {
+				m.cursor++
+			}
+		case "up", "k", "p":
+			if m.cursor > 0 {
+				m.cursor--
+			}
 		}
 	case dirLoadedMsg:
 		if msg.err != nil {
