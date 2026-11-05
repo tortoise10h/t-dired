@@ -21,7 +21,7 @@ type entry struct {
 type model struct {
 	cursor     int
 	currentDir string
-	parentDir string
+	parentDir  string
 	marked     map[int]struct{}
 	entries    []entry
 }
@@ -60,7 +60,6 @@ func loadDirEntries(path string) tea.Cmd {
 				err:  err,
 			}
 		}
-
 		var entries []entry
 
 		parentDir := filepath.Dir(targetDir)
@@ -146,6 +145,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentDir = msg.path
 		m.parentDir = filepath.Dir(msg.path)
 		m.entries = msg.entries
+
+		// if there is no entries in the current dir, the cursor stay at the .. entry but if there is at least 1 entry, the cursor should stay at the next item after .. for better ux
+		if len(m.entries) > 1 {
+			m.cursor = 1
+		} else {
+			m.cursor = 0
+		}
+
 		return m, nil
 	}
 
