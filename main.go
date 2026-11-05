@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"fmt"
 	"os"
 
@@ -26,7 +27,15 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) View() tea.View {
-	return tea.NewView("Hello, this is the first view")
+	var s strings.Builder; s.WriteString("T-Dired\n\n")
+
+	for _, file := range m.files {
+		fmt.Fprintf(&s, "%v\n", file)
+	}
+
+	s.WriteString("\nPress 'q' to quit.\n")
+
+	return tea.NewView(s.String())
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
