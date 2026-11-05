@@ -21,6 +21,7 @@ type entry struct {
 type model struct {
 	cursor     int
 	currentDir string
+	parentDir string
 	marked     map[int]struct{}
 	entries    []entry
 }
@@ -134,6 +135,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			return m, nil
+		case "^":
+			return m, loadDirEntries(m.parentDir)
 		}
 	case dirLoadedMsg:
 		if msg.err != nil {
@@ -141,6 +144,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.currentDir = msg.path
+		m.parentDir = filepath.Dir(msg.path)
 		m.entries = msg.entries
 		return m, nil
 	}
