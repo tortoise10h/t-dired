@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -111,6 +113,30 @@ func (m model) View() tea.View {
 	return v
 }
 
+func openFileCmd(path string) tea.Cmd {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "linux":
+		cmd = exec.Command("xdg-open", path)
+	default:
+		return func() tea.Msg {
+			return fmt.Errorf("Unsupported platform\n")
+		}
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		return func() tea.Msg {
+			return fmt.Errorf("Something went wrong when opening file %v\n", err)
+		}
+	}
+
+	return nil
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -128,9 +154,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.cursor >= 0 && m.cursor < len(m.entries) {
 				selectedEntry := m.entries[m.cursor]
+
+				// Directory entry? zoom in it
 				if selectedEntry.isDir {
 					return m, loadDirEntries(selectedEntry.fullPath)
 				}
+
+				// File entry? open it
+				return m, openFileCmd(selectedEntry.fullPath)
 			}
 
 			return m, nil
