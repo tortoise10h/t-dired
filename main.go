@@ -89,6 +89,7 @@ func loadDirEntries(path string) tea.Cmd {
 func (m model) View() tea.View {
 	var s strings.Builder
 	s.WriteString("T-Dired\n\n")
+	fmt.Fprintf(&s, "%s\n\n", m.currentDir)
 
 	for i, entry := range m.entries {
 		var renderedEntry string
