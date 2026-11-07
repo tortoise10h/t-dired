@@ -21,7 +21,14 @@ type dirLoadedMsg struct {
 }
 
 type model struct {
-	cursor     int
+	width int
+	height int
+
+	cursor int
+	renderStart int
+	renderEnd int
+	offset int
+
 	currentDir string
 	parentDir  string
 	marked     map[int]struct{}
@@ -39,25 +46,42 @@ func (m model) Init() tea.Cmd {
 	return loadDirCmd(".")
 }
 
+func (m model) visibleHeight() int {
+	reservedLines := 9
+
+	h := m.height - reservedLines
+	if h < 1 {
+		return 1
+	}
+
+	return h
+}
+
 func (m model) View() tea.View {
 	var s strings.Builder
 	s.WriteString("T-Dired\n\n")
-	fmt.Fprintf(&s, "%s\n\n", m.currentDir)
+	fmt.Fprintf(&s, "%s (%vx%v -- %v->%v) - c:%v\n\n", m.currentDir, m.width, m.height, m.renderStart, m.renderEnd, m.cursor)
 
-	for i, entry := range m.entries {
-		var renderedEntry string
-		if entry.isDir {
-			renderedEntry = fmt.Sprintf("%v/", entry.name)
-		} else {
-			renderedEntry = fmt.Sprintf("%v", entry.name)
+	if m.renderEnd > m.renderStart {
+		for i := m.renderStart; i<=m.renderEnd; i++ {
+			entry := m.entries[i]
+
+			var renderedEntry string
+			if entry.isDir {
+				renderedEntry = fmt.Sprintf("%v/", entry.name)
+			} else {
+				renderedEntry = fmt.Sprintf("%v", entry.name)
+			}
+
+			if i == m.cursor {
+				fmt.Fprintf(&s, "> %s\n", cursorStyle.Render(renderedEntry))
+			} else {
+				fmt.Fprintf(&s, "  %s\n", renderedEntry)
+			}
 		}
 
-		if i == m.cursor {
-			fmt.Fprintf(&s, "> %s\n", cursorStyle.Render(renderedEntry))
-		} else {
-			fmt.Fprintf(&s, "  %s\n", renderedEntry)
-		}
 	}
+
 
 	s.WriteString("\nPress 'q' to quit.\n")
 
@@ -69,6 +93,12 @@ func (m model) View() tea.View {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		m.renderStart = 0
+		m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -77,9 +107,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.entries)-1 {
 				m.cursor++
 			}
+			if m.cursor > m.renderEnd && m.renderEnd < len(m.entries) - 1 {
+				m.renderStart++
+				m.renderEnd++
+			}
 		case "up", "k", "p":
 			if m.cursor > 0 {
 				m.cursor--
+			}
+			if m.cursor < m.renderStart && m.renderStart > 0 {
+				m.renderStart--
+				m.renderEnd--
 			}
 		case "enter":
 			if m.cursor >= 0 && m.cursor < len(m.entries) {
@@ -113,6 +151,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.cursor = 0
 		}
+
+		m.renderStart = 0
+		m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
 
 		return m, nil
 	}
