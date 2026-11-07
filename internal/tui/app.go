@@ -57,6 +57,11 @@ func (m model) visibleHeight() int {
 	return h
 }
 
+func (m *model) refreshRenderFrame() {
+	m.renderStart = 0
+	m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
+}
+
 func (m model) View() tea.View {
 	var s strings.Builder
 	s.WriteString("T-Dired\n\n")
@@ -97,8 +102,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		m.renderStart = 0
-		m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
+		m.refreshRenderFrame()
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -152,8 +156,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cursor = 0
 		}
 
-		m.renderStart = 0
-		m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
+		m.refreshRenderFrame()
 
 		return m, nil
 	}
