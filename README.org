@@ -1,5 +1,5 @@
 This is a terminal file manager written in Go which is heavity inspired by Emacs Dired (TBH, my goal is to port the full Emacs Dired experience into a TUI application). Since I'm an Emacs user, I'm familiar with Dired UI, keybindings and the philosophy. But I don't live in Emacs all day (I know, that goes against the "Emacs philosophy" right). So when I'm in the terminal and want to quickly check files, I'd love to have Dired here as well. That's why I'm build ~t-dired~ for.
 
-[[https://drive.google.com/file/d/1Wnv9RXOVWNknbLMWfXunlpR8RuBSjpWE/view?usp=sharing][Preview]]
+[[https://drive.google.com/file/d/1o3AYCCmHeLS3I6g_c0nZxIPUDNdupLsv/view?usp=sharing][Preview]]
 
 =NOTE: Besides the purpose I mentioned above, I'm also using this repo to learn and practice my Go skills. So, for now, I'm hand-coding everything and things might be slow, a bit buggy, and not very fancy, but I'm enjoying every bit of it. As long as this note is still here, it means I'm writing all the code by hand!=
