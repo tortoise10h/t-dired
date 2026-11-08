@@ -21,11 +21,19 @@ func loadDirEntries(path string) ([]entry, string, error) {
 
 	parentDir := filepath.Dir(targetDir)
 	parentDirStat, _ := os.Stat(parentDir)
+	parentDirMode := parentDirStat.Mode().String()
+	parentDirModTime := parentDirStat.ModTime()
+	parentDirSize := parentDirStat.Size()
 	entries = append(entries, entry{
 		name:     "..",
 		isDir:    true,
 		fullPath: parentDir,
-		mode:     parentDirStat.Mode().String(),
+		mode:     parentDirMode,
+		size: parentDirSize,
+		modTime: parentDirModTime,
+
+		displayName: "../",
+		metadataRaw: fmt.Sprintf("%-11s %7d %s", parentDirMode, parentDirSize, formatLsTime(parentDirModTime)),
 	})
 
 	for _, de := range dirEntries {
