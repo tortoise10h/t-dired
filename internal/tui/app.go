@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -12,6 +13,12 @@ type entry struct {
 	name     string
 	isDir    bool
 	fullPath string
+	mode     string
+	size     int64
+	modTime  time.Time
+
+	metadataRaw string
+	displayName string
 }
 
 type dirLoadedMsg struct {
@@ -21,13 +28,13 @@ type dirLoadedMsg struct {
 }
 
 type model struct {
-	width int
+	width  int
 	height int
 
-	cursor int
+	cursor      int
 	renderStart int
-	renderEnd int
-	offset int
+	renderEnd   int
+	offset      int
 
 	currentDir string
 	parentDir  string
@@ -59,7 +66,7 @@ func (m model) visibleHeight() int {
 
 func (m *model) refreshRenderFrame() {
 	m.renderStart = 0
-	m.renderEnd = min(m.visibleHeight() - 1, len(m.entries) - 1)
+	m.renderEnd = min(m.visibleHeight()-1, len(m.entries)-1)
 }
 
 func (m model) View() tea.View {
@@ -68,25 +75,21 @@ func (m model) View() tea.View {
 	fmt.Fprintf(&s, "%s (%vx%v -- %v->%v) - c:%v\n\n", m.currentDir, m.width, m.height, m.renderStart, m.renderEnd, m.cursor)
 
 	if m.renderEnd > m.renderStart {
-		for i := m.renderStart; i<=m.renderEnd; i++ {
+		for i := m.renderStart; i <= m.renderEnd; i++ {
 			entry := m.entries[i]
 
-			var renderedEntry string
-			if entry.isDir {
-				renderedEntry = fmt.Sprintf("%v/", entry.name)
-			} else {
-				renderedEntry = fmt.Sprintf("%v", entry.name)
-			}
-
 			if i == m.cursor {
-				fmt.Fprintf(&s, "> %s\n", cursorStyle.Render(renderedEntry))
+				s.WriteString(metaCursorStyle.Render("> " + entry.metadataRaw))
+				s.WriteString(underlineStyle.Render("  " + entry.displayName))
+				s.WriteByte('\n')
 			} else {
-				fmt.Fprintf(&s, "  %s\n", renderedEntry)
+				s.WriteString(metaStyle.Render("  " + entry.metadataRaw))
+				s.WriteString("  ")
+				s.WriteString(entry.displayName)
+				s.WriteByte('\n')
 			}
 		}
-
 	}
-
 
 	s.WriteString("\nPress 'q' to quit.\n")
 
@@ -111,7 +114,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.entries)-1 {
 				m.cursor++
 			}
-			if m.cursor > m.renderEnd && m.renderEnd < len(m.entries) - 1 {
+			if m.cursor > m.renderEnd && m.renderEnd < len(m.entries)-1 {
 				m.renderStart++
 				m.renderEnd++
 			}

@@ -13,8 +13,8 @@ func loadDirCmd(path string) tea.Cmd {
 		entries, targetDir, err := loadDirEntries(path)
 		return dirLoadedMsg{
 			entries: entries,
-			path: targetDir,
-			err: err,
+			path:    targetDir,
+			err:     err,
 		}
 	}
 }
