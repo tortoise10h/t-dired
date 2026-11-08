@@ -32,7 +32,7 @@ func loadDirEntries(path string) ([]entry, string, error) {
 		size: parentDirSize,
 		modTime: parentDirModTime,
 
-		displayName: "../",
+		displayName: "..",
 		metadataRaw: fmt.Sprintf("%-11s %7d %s", parentDirMode, parentDirSize, formatLsTime(parentDirModTime)),
 	})
 
