@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -38,11 +39,18 @@ type mainScreenModel struct {
 	parentDir  string
 	marked     map[int]struct{}
 	entries    []entry
+
+	deleteConfirming bool
+}
+
+type openConfirmationPopupMsg struct {
+	target entry
 }
 
 func NewMainScreen() mainScreenModel {
 	return mainScreenModel{
-		marked: make(map[int]struct{}),
+		deleteConfirming: false,
+		marked:           make(map[int]struct{}),
 	}
 }
 
@@ -60,6 +68,14 @@ func (m mainScreenModel) visibleHeight() int {
 func (m *mainScreenModel) refreshRenderFrame() {
 	m.renderStart = 0
 	m.renderEnd = min(m.visibleHeight()-1, len(m.entries)-1)
+}
+
+func (m *mainScreenModel) activateDeleteState() {
+	m.deleteConfirming = true
+}
+
+func (m *mainScreenModel) deactivateDeleteState() {
+	m.deleteConfirming = false
 }
 
 func (m mainScreenModel) View() string {
@@ -85,8 +101,6 @@ func (m mainScreenModel) View() string {
 		}
 	}
 
-	s.WriteString("\nPress 'q' to quit.\n")
-
 	return s.String()
 }
 
@@ -99,9 +113,11 @@ func (m mainScreenModel) Update(msg tea.Msg) (mainScreenModel, tea.Cmd) {
 		m.refreshRenderFrame()
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
 		case "down", "j", "n":
+			if m.deleteConfirming {
+				return m, nil
+			}
+
 			if m.cursor < len(m.entries)-1 {
 				m.cursor++
 			}
@@ -110,6 +126,10 @@ func (m mainScreenModel) Update(msg tea.Msg) (mainScreenModel, tea.Cmd) {
 				m.renderEnd++
 			}
 		case "up", "k", "p":
+			if m.deleteConfirming {
+				return m, nil
+			}
+
 			if m.cursor > 0 {
 				m.cursor--
 			}
@@ -133,6 +153,22 @@ func (m mainScreenModel) Update(msg tea.Msg) (mainScreenModel, tea.Cmd) {
 			return m, nil
 		case "^":
 			return m, loadDirCmd(m.parentDir)
+		case "D":
+			if len(m.entries) < 1 {
+				return m, nil
+			}
+
+			selectedEntry := m.entries[m.cursor]
+			// We don't delete parent dir or current dir here bro
+			if selectedEntry.name == "." || selectedEntry.name == ".." {
+				return m, nil
+			}
+
+			m.activateDeleteState()
+
+			return m, func() tea.Msg {
+				return openConfirmationPopupMsg{target: selectedEntry}
+			}
 		}
 	case dirLoadedMsg:
 		if msg.err != nil {
@@ -153,6 +189,19 @@ func (m mainScreenModel) Update(msg tea.Msg) (mainScreenModel, tea.Cmd) {
 		m.refreshRenderFrame()
 
 		return m, nil
+	case confirmDecisionMsg:
+		m.deactivateDeleteState()
+
+		// Agree delete
+		if msg.confirmed {
+			if msg.target.isDir {
+				os.RemoveAll(msg.target.fullPath)
+			} else {
+				os.Remove(msg.target.fullPath)
+			}
+		}
+
+		return m, loadDirCmd(m.currentDir)
 	}
 
 	return m, nil

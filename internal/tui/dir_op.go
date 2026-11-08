@@ -29,8 +29,8 @@ func loadDirEntries(path string) ([]entry, string, error) {
 		isDir:    true,
 		fullPath: parentDir,
 		mode:     parentDirMode,
-		size: parentDirSize,
-		modTime: parentDirModTime,
+		size:     parentDirSize,
+		modTime:  parentDirModTime,
 
 		displayName: "..",
 		metadataRaw: fmt.Sprintf("%-11s %7d %s", parentDirMode, parentDirSize, formatLsTime(parentDirModTime)),
