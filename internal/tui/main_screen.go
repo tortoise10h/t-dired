@@ -175,15 +175,22 @@ func (m mainScreenModel) Update(msg tea.Msg) (mainScreenModel, tea.Cmd) {
 			return m, nil
 		}
 
+		dirBeforeLoad := m.currentDir
 		m.currentDir = msg.path
 		m.parentDir = filepath.Dir(msg.path)
 		m.entries = msg.entries
 
 		// if there is no entries in the current dir, the cursor stay at the .. entry but if there is at least 1 entry, the cursor should stay at the next item after .. for bet ux
-		if len(m.entries) > 1 {
-			m.cursor = 1
+		if m.currentDir != dirBeforeLoad {
+			if len(m.entries) > 1 {
+				m.cursor = 1
+			} else {
+				m.cursor = 0
+			}
 		} else {
-			m.cursor = 0
+			if m.cursor > len(m.entries)-1 {
+				m.cursor = len(m.entries) - 1
+			}
 		}
 
 		m.refreshRenderFrame()
